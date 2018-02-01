@@ -3,3 +3,32 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
+  
+  .main.container
+    .row
+      .col-md-6.col-md-offset-3
+
+        //form
+        form(method='POST' action='/')
+          div.form-group
+            label(for='content') Content: <br><br>
+            input(type='text', name='content', placeholder='Enter Content')
+            button.btn.btn-primary(type='Submit') Submit
+            <br><br><br><br>
+
+            label(for='attribute') Attribute: <br><br>
+            input(type='text', name='attribute', placeholder='Enter Attribute')
+            button.btn.btn-primary(type='Submit') Submit
+            <br><br><br><br>
+
+            label(for='css') CSS: <br><br>
+            input(type='text', name='css', placeholder='Enter CSS')
+            button.btn.btn-primary(type='Submit') Submit
+            <br><br><br><br>
+
+            label(for='js') JS: <br><br>
+            input(type='text', name='JS', placeholder='Enter JS')
+            button.btn.btn-primary(type='Submit') Submit
+            <br><br><br><br>
+
+
