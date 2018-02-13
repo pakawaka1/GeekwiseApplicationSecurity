@@ -26,40 +26,40 @@ class UserController {
 
     async login(req, res, next) {
         try {
-            let email = req.body.email;
-            let password = req.body.password;
+            const email = req.body.email;
+            const password = req.body.password;
             const data = await UserDb.getByEmail(email);
             if (data) {
-                let result = await bcrypt.compare(password, data.password);
+                const result = await bcrypt.compare(password, data.password);
                 if (result) {
-                    let user = new User(data);
+                    const user = new User(data);
                     return Common.resultOk(res, user);
                 } else {
                     return Common.resultNotFound(res, LOGIN_FAIL);
                 }
             } else {
                 // in debug mode we could say user doesn't exist here
+                // calculate hash to create a delay (don't leak fact that user doesn't exist)
+                const hash = await bcrypt.hash(password, SALT_ROUNDS);
                 return Common.resultNotFound(res, LOGIN_FAIL);
             }
         } catch (e) {
             // handle error
-            if (e.code == 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
     async register(req, res, next) {
         try {
-            let email = req.body.email;
-            let password = req.body.password;
-            let username = req.body.username;
+            const email = req.body.email;
+            const password = req.body.password;
+            const username = req.body.username;
             // check if username is available
             const data = await UserDb.getByEmail(email);
             if (data) {
                 // user already exists
+                // calculate hash anyway to create a delay (discourage email snooping)
+                const hash = await bcrypt.hash(password, SALT_ROUNDS);
                 return Common.userAlreadyExists(res);
             } else {
                 // calculate hash
@@ -74,11 +74,7 @@ class UserController {
             }
         } catch (e) {
             // handle error
-            if (e.code == 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
@@ -86,18 +82,14 @@ class UserController {
         try {
             const data = await UserDb.getOne(req.params.id);
             if (data) {
-                let user = new User(data);
+                const user = new User(data);
                 return Common.resultOk(res, user);
             } else {
                 return Common.resultNotFound(res);
             }
         } catch (e) {
             // handle error
-            if (e.code == 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
@@ -105,18 +97,14 @@ class UserController {
         try {
             const data = await UserDb.updateOne(req.params.id, req.body);
             if (data) {
-                let user = new User(data);
+                const user = new User(data);
                 return Common.resultOk(res, user);
             } else {
                 return Common.resultNotFound(res);
             }
         } catch (e) {
             // handle error
-            if (e.code == 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
@@ -124,18 +112,14 @@ class UserController {
         try {
             const data = await UserDb.insertOne(req.body);
             if (data) {
-                let user = new User(data);
+                const user = new User(data);
                 return Common.resultOk(res, user);
             } else {
                 return Common.resultNotFound(res);
             }
         } catch (e) {
             // handle error
-            if (e.code && e.code === 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
@@ -149,11 +133,7 @@ class UserController {
             }
         } catch (e) {
             // handle error
-            if (e.code && e.code === 0) {
-                return Common.resultNotFound(res);
-            } else {
-                return Common.resultErr(res, e.message);
-            }
+            return Common.resultErr(res, e.message);
         }
     }
 
@@ -161,7 +141,7 @@ class UserController {
         try {
             const data = await UserDb.getAll();
             if (data) {
-                let users = data.map(p => { return new User(p) });
+                const users = data.map(p => { return new User(p) });
                 return Common.resultOk(res, users);
             } else {
                 return Common.resultNotFound(res);
@@ -175,7 +155,7 @@ class UserController {
         try {
             const data = await UserDb.search(req.body.search);
             if (data) {
-                let users = data.map(p => { return new User(p) });
+                const users = data.map(p => { return new User(p) });
                 return Common.resultOk(res, users);
             } else {
                 return Common.resultOk([]);

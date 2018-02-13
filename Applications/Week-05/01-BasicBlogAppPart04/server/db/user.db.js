@@ -4,34 +4,30 @@ const TABLENAME = 'users';
 
 class UserDb {
     static getByEmail(email) {
-        let query = `SELECT * FROM ${TABLENAME} WHERE email = $1`;
-        let params = [email];
+        const query = `SELECT * FROM ${TABLENAME} WHERE email = $1`;
+        const params = [email];
         console.log(query, params);
         return db.oneOrNone(query, params);
     }
 
     static getOne(id) {
-        id = parseInt(id);
-        let query = `SELECT * FROM ${TABLENAME} WHERE is_deleted=false AND id = ${id}`;
-        console.log(query);
-        return db.oneOrNone(query);
+        const query = `SELECT * FROM ${TABLENAME} WHERE is_deleted=false AND id = $1`;
+        const params = [id];
+        console.log(query, params);
+        return db.oneOrNone(query, params);
     }
 
     static getAll() {
-        let query = `SELECT * FROM ${TABLENAME} WHERE is_deleted=false ORDER BY id DESC`;
+        const query = `SELECT * FROM ${TABLENAME} WHERE is_deleted=false ORDER BY id DESC`;
         console.log(query);
         return db.any(query);
     }
 
     static updateOne(id, data) {
-        id = parseInt(id);
-        let params = [];
-        Object.keys(data).forEach((key) => {
-            params.push(`${key} = '${data[key]}'`);
-        });
-        let query = `UPDATE ${TABLENAME} SET ${params.join()} WHERE is_deleted=false AND id = ${id} RETURNING *`;
-        console.log(query);
-        return db.one(query);
+        const query = `UPDATE ${TABLENAME} SET username=$1, email=$2 WHERE is_deleted=false AND id = $3 RETURNING *`;
+        const params = [data.username, data.email, id];
+        console.log(query, params);
+        return db.one(query, params);
     }
 
     static deleteOne(id) {
