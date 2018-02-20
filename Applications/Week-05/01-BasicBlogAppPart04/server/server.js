@@ -3,6 +3,9 @@ const logger = require('morgan');
 const bodyParser = require('body-parser');
 const app = express();
 require('dotenv').config();
+const csrf = require('csrf');
+const csrfProtection = csrf({cookie: true});
+
 
 const controllers = require('./controllers/controllers');
 
@@ -25,6 +28,8 @@ app.use(bodyParser.json());
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(csrf({ cookie: true}));
 
 // CORS
 // This allows client applications from other domains use the API Server
