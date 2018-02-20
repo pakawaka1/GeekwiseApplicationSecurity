@@ -10,8 +10,13 @@
     "author": "Corey Shuman (ctshumancode@gmail.com)",
     "license": "ISC",
     "dependencies": {
+<<<<<<< HEAD
+=======
+        "bcryptjs": "^2.4.3",
+>>>>>>> upstream/master
         "dotenv": "^4.0.0",
         "express": "^4.16.2",
+        "express-jwt": "^5.3.0",
         "morgan": "^1.9.0",
         "pg-promise": "^7.3.3",
         "bcryptjs": "^2.4.3"
