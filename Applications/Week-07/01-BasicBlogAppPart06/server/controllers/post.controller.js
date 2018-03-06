@@ -1,5 +1,6 @@
 const Post = require( '../models/post.model' );
 const PostDb = require( '../db/post.db' );
+const UserDb = require('../db/user.db');
 const Common = require( './common' );
 
 class PostController {
@@ -92,6 +93,11 @@ class PostController {
 
   async getAll( req, res, next ) {
     try {
+      const ourToken = MyBlogApp.token();
+      const parsedToken = MyBlogApp.parseJwt(ourToken);
+      const currentUserId = parsedToken.id;
+      const result = await UserDb.getForUser(currentUserId);
+      console.log('PLEEEEEASE WORK:::', result);
       const data = await PostDb.getAll();
       if ( data ) {
         const posts = data.posts.map( p => { return new Post( p ) } );
