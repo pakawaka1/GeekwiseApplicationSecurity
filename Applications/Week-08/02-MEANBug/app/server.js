@@ -1,36 +1,37 @@
 //include dependencies
-var express = require('express');
-var serveStatic = require('serve-static');
-var bodyParser = require('body-parser')
-var cookieParser = require('cookie-parser');
-var mongo = require('mongodb').MongoClient;
-var unless = require('express-unless');
-var session = require('client-sessions');
-var csurf = require('csurf');
+var express = require( 'express' );
+var serveStatic = require( 'serve-static' );
+var bodyParser = require( 'body-parser' )
+var cookieParser = require( 'cookie-parser' );
+var mongo = require( 'mongodb' )
+  .MongoClient;
+var unless = require( 'express-unless' );
+var session = require( 'client-sessions' );
+var csurf = require( 'csurf' );
 
 //include config file
-var config = require('./server.conf');
+var config = require( './server.conf' );
 
 //create express server and register global middleware
 var app = express();
-app.use(bodyParser.json());	//to support json bodies
-app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
-	extended: true
-}));
-app.use(cookieParser());
+app.use( bodyParser.json() ); //to support json bodies
+app.use( bodyParser.urlencoded( { // to support URL-encoded bodies
+  extended: true
+} ) );
+app.use( cookieParser() );
 
-app.use(serveStatic(__dirname + '/public'));	//serve files in /public dir
+app.use( serveStatic( __dirname + '/public' ) ); //serve files in /public dir
 
 //note: session stored in client-side cookie 
-app.use(session({
-	cookieName: 'session',
-	secret: config.sessionSecret,
-	duration: 60 * 60 * 1000 * 24,	//internally, cookie valid for 24 hours
-	cookie: {
-		httpOnly: false,
-		maxAge: 1000 * 60 * 15, //cookie purged from browser after 15 minutes
-	}
-}));
+app.use( session( {
+  cookieName: 'session',
+  secret: config.sessionSecret,
+  duration: 60 * 60 * 1000 * 24, //internally, cookie valid for 24 hours
+  cookie: {
+    httpOnly: false,
+    maxAge: 1000 * 60 * 15, //cookie purged from browser after 15 minutes
+  }
+} ) );
 
 //bind to interface mongodb:9000
 app.listen(9000, function(){
@@ -92,75 +93,74 @@ var queryMongo = function(res, database, collectionName, field, value){
 }
 
 //If logged in, continue; else, redirect to index page
-var isLoggedIn = function(req, res, next){
-	if(req.session.authenticated)
-		next();
-	else
-		res.redirect('/login');	
+var isLoggedIn = function( req, res, next ) {
+  if ( req.session.authenticated )
+    next();
+  else
+    res.redirect( '/login' );
 }
 
 //add express-unless to isLoggedIn
 isLoggedIn.unless = unless;
 
-
 //apply isLoggedIn to all routes beginning with /secure
 //uses negative regex to exclude routes that don't begin with /secure
-app.use(isLoggedIn.unless({path: /^(?!\/secure).*/}));
+app.use( isLoggedIn.unless( { path: /^(?!\/secure).*/ } ) );
 
 //routes
 //isLoggedIn middleware applied directly to route
-app.get('/', isLoggedIn, function(req, res){
-	res.sendFile('./index.html', {root: __dirname})
-});
+app.get( '/', isLoggedIn, function( req, res ) {
+  res.sendFile( './index.html', { root: __dirname } )
+} );
 
-app.get('/about', function(req, res){
-	//the file ./about.html does not exist. Will return path to requested file in dev mode.
-	res.sendFile('./about.html', {root: __dirname})
-});
+app.get( '/about', function( req, res ) {
+  //the file ./about.html does not exist. Will return path to requested file in dev mode.
+  res.sendFile( './about.html', { root: __dirname } )
+} );
 
-app.get('/secure/invoices', function(req, res){
-	res.sendFile('./invoices.html', {root: __dirname})	//use vanilla HTML
-});
+app.get( '/secure/invoices', function( req, res ) {
+  res.sendFile( './invoices.html', { root: __dirname } ) //use vanilla HTML
+} );
 
-app.get('/secure/manageInvoices', function(req, res){
-	res.sendFile('./manageInvoices.html', {root: __dirname})	//use vanilla HTML
-});
+app.get( '/secure/manageInvoices', function( req, res ) {
+  res.sendFile( './manageInvoices.html', { root: __dirname } ) //use vanilla HTML
+} );
 
-app.get('/logout', function(req, res){
-	res.cookie('session', null);	//tell browser to set session as null to 'invalidate' session
-	res.redirect('/login');	
-});
+app.get( '/logout', function( req, res ) {
+  res.cookie( 'session', null ); //tell browser to set session as null to 'invalidate' session
+  res.redirect( '/login' );
+} );
 
-app.get('/login', function(req, res){
-	res.sendFile('./login.html', {root: __dirname})
-});
+app.get( '/login', function( req, res ) {
+  res.sendFile( './login.html', { root: __dirname } )
+} );
 
-app.post('/login', function(req, res){
-	authenticate(req.body.user, req.body.pass, req, res);
-});
+app.post( '/login', function( req, res ) {
+  authenticate( req.body.user, req.body.pass, req, res );
+} );
 
-app.post('/secure/query', function(req, res){
-	queryMongo(res, 'billing', 'invoices', req.body.field, req.body.value);
-});
+app.post( '/secure/query', function( req, res ) {
+  queryMongo( res, 'billing', 'invoices', req.body.field, req.body.value );
+} );
 
 //use csurf middleware to protect against csurf attacks - does not apply to GET requests unless ignoreMethods option is used 
-app.use(csurf({
-	cookie: true,
-}));
+app.use( csurf( {
+  cookie: true,
+} ) );
 
 //set XSRF-TOKEN cookie for each request
-app.use(function(req, res, next){
-	res.cookie('XSRF-TOKEN', req.csrfToken());
-	next();
-});
+app.use( function( req, res, next ) {
+  res.cookie( 'XSRF-TOKEN', req.csrfToken() );
+  next();
+} );
 
 //error handler for csurf middleware
-app.use(function (err, req, res, next) {
-	if (err.code !== 'EBADCSRFTOKEN') return next(err);
-	//handle CSRF token errors here 
-	res.status(403)
-	res.send('form tampered with')
-});
+app.use( function( err, req, res, next ) {
+  if ( err.code !== 'EBADCSRFTOKEN' ) return next( err );
+  //handle CSRF token errors here 
+  res.status( 403 )
+  res.send( 'form tampered with' )
+} );
 
 //remove invoice
 app.get('/secure/removeInvoice', function(req, res){
