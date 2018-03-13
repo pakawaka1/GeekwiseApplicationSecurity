@@ -33,63 +33,75 @@ app.use( session( {
   }
 } ) );
 
-//bind to interface mongodb:9000
-app.listen(9000, function(){
-	if(process.env.NODE_ENV === undefined)
-		process.env.NODE_ENV = 'development';
-	console.log("Server running on mongodb, port %d in %s mode.", this.address().port, process.env.NODE_ENV);
-});
+//bind to interface localhost:9000
+app.listen( 9000, function() {
+  if ( process.env.NODE_ENV === undefined )
+    process.env.NODE_ENV = 'development';
+  console.log( "Server running on localhost, port %d in %s mode.", this.address()
+    .port, process.env.NODE_ENV );
+} );
 
-function authenticate(user, pass, req, res){
-	//connect to MongoDB - auth not enabled 
-	//also, http interface enabled at http://mongodb:28017/
-	//can bypass with query selector injection (i.e., user=admin&pass[$gt]=)
-	mongo.connect('mongodb://mongodb:27017/users', function(err, db){
-		if(err){ 
-			console.log('MongoDB connection error...');
-			return err;
-		}
-		db.collection('collection').findOne({username: String ( user ), password: String( pass ), isActive: true},function(err, result){
-			if(err){
-				console.log('Query error...');
-				return err;
-			}
-			if(result !== null){
-				req.session.authenticated = true;
-				res.redirect('/');
-			}
-			else
-				res.redirect('/login?user='+user);
-		});
-		
-	});	
+function authenticate( user, pass, req, res ) {
+  //connect to MongoDB - auth not enabled 
+  //also, http interface enabled at http://localhost:28017/
+  //can bypass with query selector injection (i.e., user=admin&pass[$gt]=)
+  mongo.connect( 'mongodb://mongodb:27017/users', function( err, db ) {
+    if ( err ) {
+      console.log( 'MongoDB connection error...' );
+      return err;
+    }
+    if ( typeof user === 'string' && typeof pass === 'string' ) {
+      console.log( pass, typeof pass );
+      const query = { username: user, password: pass, isActive: true };
+      console.log( query );
+      db.collection( 'collection' )
+        .findOne( query, function( err, result ) {
+          if ( err ) {
+            console.log( 'Query error...' );
+            return err;
+          }
+          if ( result !== null ) {
+            req.session.authenticated = true;
+            res.redirect( '/' );
+          } else
+            res.redirect( '/login?user=' + user );
+        } );
+    } else {
+      console.log( pass, typeof pass );
+      res.redirect( '/login?user=' + user );
+    }
+
+  } );
 }
 
-var queryMongo = function(res, database, collectionName, field, value){
-	//connect to MongoDB - auth not enabled 
-	//also, http interface enabled at http://mongodb:28017/
-	mongo.connect('mongodb://mongodb:27017/'+database, function(err, db){
-		if(err){ 
-			console.log('MongoDB connection error...');
-			return err;
-		}
+var queryMongo = function( res, database, collectionName, field, value ) {
+  //connect to MongoDB - auth not enabled 
+  //also, http interface enabled at http://localhost:28017/
+  mongo.connect( 'mongodb://mongodb:27017/' + database, function( err, db ) {
+    if ( err ) {
+      console.log( 'MongoDB connection error...' );
+      return err;
+    }
 
-		//search query
-		var query = {}
+    //search query
+    var query = {}
 
-		//set key:value pair dynamically - user can define key!
-		query[field] = value;
+    //set key:value pair dynamically - user can define key!
+    query[ field ] = value;
+    console.log( query )
 
-		//query db
-		db.collection(collectionName).find(query).toArray(function(err, result){
-			if(err){
-				console.log('Query error...');
-				return err;
-			}
-			//return array of objects matching query
-			res.send(result);
-		});
-	});
+    //query db
+    db.collection( collectionName )
+      .find( query )
+      .toArray( function( err, result ) {
+        if ( err ) {
+          console.log( 'Query error...' );
+          return err;
+        }
+        //return array of objects matching query
+        res.send( result );
+      } );
+  } );
 }
 
 //If logged in, continue; else, redirect to index page
@@ -168,33 +180,6 @@ app.use( function( err, req, res, next ) {
 } );
 
 //remove invoice
-<<<<<<< HEAD
-app.get('/secure/removeInvoice', function(req, res){
-	//connect to MongoDB - auth not enabled 
-	//also, http interface enabled at http://mongodb:28017/
-	mongo.connect('mongodb://mongodb:27017/billing', function(err, db){
-		if(err){ 
-			console.log(err);
-			res.status(500).send('Could not connect to database...');
-			return;
-		}
-		db.collection('invoices').remove({id: req.query.value}, function(err, record){
-			if(err){
-				console.log(err);
-				//XSS vector if not sanitized by $sce and used in html context via ng-bind-html
-				res.status(500).send('Could not remove invoice where id = ' + req.query.value);
-				return;
-			}
-			var numRemoved = JSON.parse(record).n;
-			if(numRemoved > 0)
-				//XSS vector if not sanitized by $sce and used in html context via ng-bind-html
-				res.send('Successfully removed ' + numRemoved + ' invoice where id = ' + req.query.value);
-			else
-				res.send('Unable to locate invoice where id = ' + req.query.value);
-		});
-	});
-});
-=======
 app.post( '/secure/removeInvoice', function( req, res ) {
   //connect to MongoDB - auth not enabled 
   //also, http interface enabled at http://localhost:28017/
@@ -226,47 +211,48 @@ app.post( '/secure/removeInvoice', function( req, res ) {
       } );
   } );
 } );
->>>>>>> upstream/master
 
 //add invoice
-app.post('/secure/addInvoice', function(req, res){
-	//build invoice	- inputs are not validated and invoice object is open to parameter pollution
-	const invoice = {
-		ccn: null,
-		fNmae: null,
-		id: null,
-		item: null,
-		lName: null,
-		paid: null,
-		price: null,
-		quantity: null
-	};
+app.post( '/secure/addInvoice', function( req, res ) {
+  //build invoice	- inputs are not validated and invoice object is open to parameter pollution
+  const invoice = {
+    ccn: null,
+    fName: null,
+    id: null,
+    item: null,
+    lName: null,
+    paid: null,
+    price: null,
+    quantity: null
+  };
+  const data = req.body;
 
-	const data = req.body;
+  for ( var key in invoice ) {
+    if ( invoice.hasOwnProperty( key ) && typeof data[ key ] === 'string' ) {
+      invoice[ key ] = data[ key ];
+    }
+  }
+  console.log( invoice );
 
-	for ( var key in invoice ) {
-		if ( invoice.hasOwnProperty (ke + voice [ key ] = data[ key ];
-			invoice [ key ] = data [ key ]; 
-	}
-}
-					//-Put in place some manual checks here to prevent vulnerability
-
-	//connect to MongoDB - auth not enabled 
-	//also, http interface enabled at http://mongodb:28017/
-	mongo.connect('mongodb://mongodb:27017/billing', function(err, db){
-		if(err){ 
-			console.log(err);
-			res.status(500).send('Could not add invoice...');
-			return;
-		}
-		db.collection('invoices').insert(invoice, function(err, record){
-			if(err){
-				console.log(err);
-				res.status(500).send('Could not add invoice...');
-				return;
-			}
-			console.log('Added invoice: %s', JSON.stringify(record));
-			res.send('Invoice added successfully...');
-		});
-	});
-});
+  //connect to MongoDB - auth not enabled 
+  //also, http interface enabled at http://localhost:28017/
+  mongo.connect( 'mongodb://mongodb:27017/billing', function( err, db ) {
+    if ( err ) {
+      console.log( err );
+      res.status( 500 )
+        .send( 'Could not add invoice...' );
+      return;
+    }
+    db.collection( 'invoices' )
+      .insert( invoice, function( err, record ) {
+        if ( err ) {
+          console.log( err );
+          res.status( 500 )
+            .send( 'Could not add invoice...' );
+          return;
+        }
+        console.log( 'Added invoice: %s', JSON.stringify( record ) );
+        res.send( 'Invoice added successfully...' );
+      } );
+  } );
+} );
